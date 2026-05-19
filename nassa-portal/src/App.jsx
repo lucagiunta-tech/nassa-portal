@@ -112,19 +112,34 @@ const MOCK_KPI = {
   ],
 };
 
-/* ─── STORAGE ─────────────────────────────────────────────── */
+/* ─── SUPABASE STORAGE ────────────────────────────────────── */
+const SB_URL = "https://wirwkcbyikezklfrutlo.supabase.co";
+const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndpcndrY2J5aWtlemtsZnJ1dGxvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxNzc5ODYsImV4cCI6MjA5NDc1Mzk4Nn0.fGdcI691iXQyURVMY14jE2Fb4xkuvPSe_2oPLloOJWs";
+const SB_HEADERS = { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}`, "Content-Type": "application/json" };
+
 const store = {
   async get(key) {
-    try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : null; }
-    catch { return null; }
+    try {
+      const res = await fetch(`${SB_URL}/rest/v1/kv_store?key=eq.${encodeURIComponent(key)}&select=value`, { headers: SB_HEADERS });
+      const data = await res.json();
+      return data.length ? data[0].value : null;
+    } catch { return null; }
   },
   async set(key, val) {
-    try { localStorage.setItem(key, JSON.stringify(val)); return true; }
-    catch { return false; }
+    try {
+      await fetch(`${SB_URL}/rest/v1/kv_store`, {
+        method: "POST",
+        headers: { ...SB_HEADERS, Prefer: "resolution=merge-duplicates" },
+        body: JSON.stringify({ key, value: val }),
+      });
+      return true;
+    } catch { return false; }
   },
   async del(key) {
-    try { localStorage.removeItem(key); return true; }
-    catch { return false; }
+    try {
+      await fetch(`${SB_URL}/rest/v1/kv_store?key=eq.${encodeURIComponent(key)}`, { method: "DELETE", headers: SB_HEADERS });
+      return true;
+    } catch { return false; }
   },
 };
 
